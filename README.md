@@ -2,7 +2,18 @@
 
 Toolkit is an easy way to generate and use AI plugins. Generate code for 🦜 🔗 LangChain plugins by just describing what they should do.
 
+You can also try out the hosted version at [toolkit.club](toolkit.club)
+
+This project is brought to you by the team from [Pal](www.heypal.chat) - an easy way to make an AI assistant that knows about your product, and has access to a wide set of tools to help your customers & team get more done.
+
+## Roadmap
+- [x] Generate LangChain tools via the npm package
+- [ ] CLI-based usage
+- [ ] Agent auto-runs & continually improve the tool
+- [ ] ChatGPT plugin definition & hosting
+
 ## Usage
+You can import this package, and generate a tool from your code. 
 
 ```typescript
 import Toolkit from '@heypal/toolkit-ai';
@@ -26,8 +37,15 @@ const toolkit = new Toolkit({
 
 ```
 
-### Result
+We've also made an easy library you can try out the tools you generate here: 
+[hey-pal/langchain-tools-demo](https://github.com/hey-pal/langchain-tools-demo)
 
+### Sample Output of Generating a Tool
+
+The output will be a Tool object, that will include an implementation of the LangchainCode. Below is an example output that was generated for a LangChain tool
+
+<details>
+<summary>Example LangChain Tool Code Output</summary>
 ```javascript
 import { Tool } from 'langchain/agents';
 import Ajv from 'ajv';
@@ -153,3 +171,4 @@ class TemperatureConverter extends Tool {
 
 export default TemperatureConverter;
 ```
+</details>
