@@ -46,6 +46,7 @@ The output will be a Tool object, that will include an implementation of the Lan
 
 <details>
 <summary>Example LangChain Tool Code Output</summary>
+
 ```javascript
 import { Tool } from 'langchain/agents';
 import Ajv from 'ajv';
