@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+pnpm prettier --check ./src
+pnpm lint
+pnpm typecheck
