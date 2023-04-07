@@ -2,9 +2,9 @@
 
 Toolkit is an easy way to generate and use AI plugins. Generate code for 🦜 🔗 LangChain plugins by just describing what they should do.
 
-You can also try out the hosted version at [toolkit.club](toolkit.club)
+You can also try out the hosted version at [toolkit.club](https://toolkit.club)
 
-This project is brought to you by the team from [Pal](www.heypal.chat) - an easy way to make an AI assistant that knows about your product, and has access to a wide set of tools to help your customers & team get more done.
+This project is brought to you by the team from [Pal](https://www.heypal.chat) - an easy way to make an AI assistant that knows about your product, and has access to a wide set of tools to help your customers & team get more done.
 
 ## Roadmap
 - [x] Generate LangChain tools via the npm package
