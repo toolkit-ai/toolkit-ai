@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "build": "tsc",
+    "build": "rollup -c",
     "prepublishOnly": "pnpm build",
     "push-tags": "git push --tags origin main",
     "publish-major": "npm version major && pnpm push-tags && npm publish",
@@ -22,6 +22,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.0",
     "@tsconfig/node18-strictest-esm": "^1.0.1",
     "@types/node": "^18.15.11",
     "@types/prettier": "^2.7.2",
@@ -33,6 +34,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
     "husky": "^8.0.3",
+    "rollup": "^3.20.2",
     "typescript": "^5.0.3"
   },
   "dependencies": {

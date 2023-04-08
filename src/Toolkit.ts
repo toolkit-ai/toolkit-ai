@@ -8,6 +8,7 @@ import type { ChainValues } from 'langchain/schema';
 
 import { GeneratedToolSchema } from 'lib/schemas';
 import type { GeneratedTool, JsonObject, BaseTool, Tool } from 'lib/types';
+import { resolve } from 'lib/util';
 
 export type ToolkitInput = {
   openAIApiKey?: string;
@@ -22,7 +23,7 @@ export type GenerateToolInput = {
 
 class Toolkit {
   private static generatePrompt = readFileSync(
-    './src/templates/generate-prompt.txt'
+    resolve('../src/templates/generate-prompt.txt')
   ).toString();
 
   private generatorChain: LLMChain;
