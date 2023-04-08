@@ -15,6 +15,16 @@ This project is brought to you by the team from [Pal](https://www.heypal.chat) -
 ## Usage
 You can import this package, and generate a tool from your code. 
 
+yarn
+```js
+yarn add @heypal/toolkit-ai
+```
+
+pnpm
+```js
+pnpm add @heypal/toolkit-ai
+```
+
 ```typescript
 import Toolkit from '@heypal/toolkit-ai';
 
