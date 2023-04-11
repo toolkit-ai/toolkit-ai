@@ -1,6 +1,7 @@
 import type { JsonObject, Tool } from 'lib/types';
 export type ToolkitInput = {
     openAIApiKey?: string;
+    serpApiKey?: string;
 };
 export type GenerateToolInput = {
     name: string;
@@ -9,11 +10,18 @@ export type GenerateToolInput = {
     outputSchema?: JsonObject | undefined;
 };
 declare class Toolkit {
-    private static generatePrompt;
+    private openAIApiKey;
+    private serpApiKey;
+    private tools;
     private generatorChain;
+    private executorChain;
     constructor(input?: ToolkitInput);
-    private static newGeneratorChain;
-    generateTool(input: GenerateToolInput): Promise<Tool>;
+    generateTool(input: GenerateToolInput, withExecutor?: boolean): Promise<Tool>;
+    private newLlmChain;
+    private constructGeneratorChain;
+    private constructExecutorChain;
+    private callGenerator;
+    private callExecutor;
 }
 export default Toolkit;
 //# sourceMappingURL=Toolkit.d.ts.map

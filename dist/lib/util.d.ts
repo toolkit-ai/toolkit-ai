@@ -1,2 +1,2 @@
-export declare function resolve(relativePath: string): string;
+export declare function resolveFromSrc(relativePath: string): string;
 //# sourceMappingURL=util.d.ts.map

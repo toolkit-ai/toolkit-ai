@@ -5,7 +5,7 @@ import Handlebars from 'handlebars';
 import { format } from 'prettier';
 
 import type { BaseTool, JsonValue } from 'lib/types';
-import { resolve } from 'lib/util';
+import { resolveFromSrc } from 'lib/util';
 
 class ToolFormatter {
   private tool: BaseTool;
@@ -16,7 +16,7 @@ class ToolFormatter {
     this.tool = tool;
 
     const langchainTemplateString = readFileSync(
-      resolve('../src/templates/langchain-tool.hbs')
+      resolveFromSrc('templates/langchain-tool.hbs')
     ).toString();
     this.langchainTemplate = Handlebars.compile(langchainTemplateString);
   }

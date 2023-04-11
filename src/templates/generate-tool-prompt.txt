@@ -14,4 +14,4 @@ The string in the `code` field should define a one-page ES module. It may import
 
 Your output will repeat the partial tool definition below with missing fields completed. It will be one whole, valid, parseable JSON object, omitting code block markup. Be sure to complete the "code" field with a string of actual JavaScript, not a placeholder.
 
-{generateInput}
+{generateToolInput}

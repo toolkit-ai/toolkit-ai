@@ -28,6 +28,10 @@
           {
             "pattern": "lib/**",
             "group": "internal"
+          },
+          {
+            "pattern": "tools/**",
+            "group": "internal"
           }
         ],
         "pathGroupsExcludedImportTypes": [
