@@ -4,14 +4,18 @@ import Toolkit from '../Toolkit';
 // will use the environment variable OPENAI_API_KEY
 const toolkit = new Toolkit({
   openAIApiKey: '',
+  serpApiKey: '',
 });
 
 (async () => {
-  const tool = await toolkit.generateTool({
-    name: 'Temperature Converter',
-    description:
-      'Converts a temperature from Farenheit, Celsius, or Kelvin to any other unit.',
-  });
+  const tool = await toolkit.generateTool(
+    {
+      name: 'Temperature Converter',
+      description:
+        'Converts a temperature from Farenheit, Celsius, or Kelvin to any other unit.',
+    },
+    true
+  );
 
   // eslint-disable-next-line no-console
   console.log(tool.langChainCode);

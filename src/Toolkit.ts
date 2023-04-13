@@ -101,7 +101,7 @@ class Toolkit {
   private constructGeneratorChain(generatorPromptText: string) {
     const generatorPromptTemplate = new PromptTemplate({
       template: generatorPromptText,
-      inputVariables: ['generateInput'],
+      inputVariables: ['generateToolInput'],
     });
     this.generatorChain = this.newLlmChain(generatorPromptTemplate);
   }
@@ -113,7 +113,7 @@ class Toolkit {
     const executorPromptTemplate = new PromptTemplate({
       template: executorPromptText,
       inputVariables: [
-        'generateInput',
+        'generateToolInput',
         'tools',
         'toolNames',
         'agent_scratchpad',
