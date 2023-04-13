@@ -18,6 +18,7 @@ import NpmSearch from 'tools/NpmSearch';
 export type ToolkitInput = {
   openAIApiKey?: string;
   serpApiKey?: string;
+  modelName?: string;
 };
 
 export type GenerateToolInput = {
@@ -32,6 +33,8 @@ class Toolkit {
 
   private serpApiKey: string | undefined;
 
+  private modelName: string;
+
   private tools: LangChainTool[];
 
   // Chain used to generate tool without use of other tools
@@ -43,6 +46,7 @@ class Toolkit {
   constructor(input?: ToolkitInput) {
     this.openAIApiKey = input?.openAIApiKey;
     this.serpApiKey = input?.serpApiKey;
+    this.modelName = input?.modelName || 'gpt-4';
 
     this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
 
@@ -91,7 +95,7 @@ class Toolkit {
 
   private newLlmChain(prompt: PromptTemplate) {
     const llm = new OpenAI({
-      modelName: 'gpt-4',
+      modelName: this.modelName,
       temperature: 0,
       ...(this.openAIApiKey ? { openAIApiKey: this.openAIApiKey } : {}),
     });

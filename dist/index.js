@@ -117,6 +117,7 @@ class NpmSearch extends Tool {
 class Toolkit {
     openAIApiKey;
     serpApiKey;
+    modelName;
     tools;
     // Chain used to generate tool without use of other tools
     generatorChain;
@@ -125,6 +126,7 @@ class Toolkit {
     constructor(input) {
         this.openAIApiKey = input?.openAIApiKey;
         this.serpApiKey = input?.serpApiKey;
+        this.modelName = input?.modelName || 'gpt-4';
         this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
         const generatorPromptText = readFileSync(resolveFromSrc('templates/generate-tool-prompt.txt')).toString();
         this.constructGeneratorChain(generatorPromptText);
@@ -158,7 +160,7 @@ class Toolkit {
     }
     newLlmChain(prompt) {
         const llm = new OpenAI({
-            modelName: 'gpt-4',
+            modelName: this.modelName,
             temperature: 0,
             ...(this.openAIApiKey ? { openAIApiKey: this.openAIApiKey } : {}),
         });
