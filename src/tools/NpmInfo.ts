@@ -11,10 +11,14 @@ class NpmInfo extends Tool {
 
   // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
   protected override async _call(packageName: string): Promise<string> {
-    const results = await getPackument({
-      name: packageName,
-    });
-    return results.readme || 'No details available';
+    try {
+      const results = await getPackument({
+        name: packageName,
+      });
+      return results.readme || 'No details available';
+    } catch (err) {
+      return `Error: ${err}`;
+    }
   }
 }
 

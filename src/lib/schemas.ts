@@ -26,3 +26,10 @@ export const GeneratedToolSchema = z.object({
   outputSchema: JsonObjectSchema,
   code: z.string(),
 });
+
+export const IterateInputSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  inputSchema: z.optional(JsonObjectSchema),
+  outputSchema: z.optional(JsonObjectSchema),
+});

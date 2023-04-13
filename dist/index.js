@@ -6,9 +6,9 @@ import { format } from 'prettier';
 import { dirname, resolve, join } from 'path';
 import { fileURLToPath } from 'url';
 import slugify from '@sindresorhus/slugify';
-import { OpenAI, LLMChain } from 'langchain';
+import { OpenAI, LLMChain, PromptTemplate } from 'langchain';
+import { ConsoleCallbackHandler } from 'langchain/callbacks';
 import { Tool, ZeroShotAgent, AgentExecutor } from 'langchain/agents';
-import { PromptTemplate } from 'langchain/prompts';
 import { SerpAPI } from 'langchain/tools';
 import queryRegistry from 'query-registry';
 
@@ -31,6 +31,12 @@ const GeneratedToolSchema = z.object({
     outputSchema: JsonObjectSchema,
     code: z.string(),
 });
+z.object({
+    name: z.string(),
+    description: z.string(),
+    inputSchema: z.optional(JsonObjectSchema),
+    outputSchema: z.optional(JsonObjectSchema),
+});
 
 function resolveFromSrc(relativePath) {
     const currentFileURL = import.meta.url;
@@ -38,6 +44,10 @@ function resolveFromSrc(relativePath) {
     const currentDirPath = dirname(currentFilePath);
     const rootPath = resolve(currentDirPath, '../..');
     return join(rootPath, '/src', relativePath);
+}
+function readTemplate(name) {
+    const path = resolveFromSrc(`templates/${name}`);
+    return readFileSync(path).toString();
 }
 
 class ToolFormatter {
@@ -78,16 +88,59 @@ class ToolFormatter {
     }
 }
 
+class BaseChain {
+    openAIApiKey;
+    logToConsole;
+    chain;
+    constructor(input) {
+        this.openAIApiKey = input.openAIApiKey;
+        this.logToConsole = input.logToConsole;
+    }
+    async generate(input) {
+        const outputKey = this.getOutputKey();
+        const chainValues = this.getChainValues(input);
+        const consoleCallbackHandler = new ConsoleCallbackHandler({
+            alwaysVerbose: true,
+        });
+        if (this.logToConsole) {
+            this.chain.callbackManager.addHandler(consoleCallbackHandler);
+        }
+        const responseValues = await this.chain.call(chainValues);
+        const responseString = responseValues[outputKey];
+        if (!responseString) {
+            throw new Error(`value "${outputKey}" not returned from chain call, got values: ${responseValues}`);
+        }
+        if (this.logToConsole) {
+            this.chain.callbackManager.removeHandler(consoleCallbackHandler);
+        }
+        return responseString;
+    }
+    newLlmChain() {
+        const llm = new OpenAI({
+            modelName: 'gpt-4',
+            temperature: 0,
+            openAIApiKey: this.openAIApiKey,
+        });
+        const prompt = this.getPromptTemplate();
+        return new LLMChain({ llm, prompt });
+    }
+}
+
 const { getPackument } = queryRegistry;
 class NpmInfo extends Tool {
     name = 'npm-info';
     description = 'Query NPM to fetch the README file of a particular package by name. Use this to discover implementation and usage details for a given package.';
     // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
     async _call(packageName) {
-        const results = await getPackument({
-            name: packageName,
-        });
-        return results.readme || 'No details available';
+        try {
+            const results = await getPackument({
+                name: packageName,
+            });
+            return results.readme || 'No details available';
+        }
+        catch (err) {
+            return `Error: ${err}`;
+        }
     }
 }
 
@@ -97,53 +150,198 @@ class NpmSearch extends Tool {
     description = 'Search NPM to find packages given a search string. The response is an array of JSON objects including package names, descriptions, and overall quality scores.';
     // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
     async _call(searchString) {
-        const { objects: results } = await searchPackages({
-            query: {
-                text: searchString,
-            },
-        });
-        if (results.length < 1) {
-            return 'Error: no results';
+        try {
+            const { objects: results } = await searchPackages({
+                query: {
+                    text: searchString,
+                },
+            });
+            if (results.length < 1) {
+                return 'Error: no results';
+            }
+            const info = results.map(({ package: { name, description }, score: { final } }) => ({
+                name,
+                description,
+                score: final,
+            }));
+            return JSON.stringify(info);
         }
-        const info = results.map(({ package: { name, description }, score: { final } }) => ({
-            name,
-            description,
-            score: final,
-        }));
-        return JSON.stringify(info);
+        catch (err) {
+            return `Error: ${err}`;
+        }
+    }
+}
+
+/* eslint-disable class-methods-use-this */
+class ExecutorChain extends BaseChain {
+    serpApiKey;
+    tools;
+    constructor(input) {
+        super(input);
+        this.serpApiKey = input.serpApiKey;
+        this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
+        const llmChain = this.newLlmChain();
+        const agent = new ZeroShotAgent({
+            llmChain,
+        });
+        this.chain = new AgentExecutor({
+            tools: this.tools,
+            agent,
+        });
+    }
+    getPromptTemplate() {
+        const toolSpec = readTemplate('tool-spec.txt');
+        const generateToolPrompt = Handlebars.compile(readTemplate('generate-tool-prompt.hbs'))({ toolSpec });
+        const template = Handlebars.compile(readTemplate('executor-prompt.hbs'))({
+            prompt: generateToolPrompt,
+        });
+        return new PromptTemplate({
+            template,
+            inputVariables: [
+                'generateToolInput',
+                'tools',
+                'toolNames',
+                'agent_scratchpad',
+            ],
+        });
+    }
+    getChainValues(input) {
+        return {
+            generateToolInput: JSON.stringify(input),
+            tools: this.tools
+                .map(({ name, description }) => `${name}: ${description}`)
+                .join('\n'),
+            toolNames: this.tools.map(({ name }) => name).join(', '),
+        };
+    }
+    getOutputKey() {
+        return 'output';
+    }
+}
+
+/* eslint-disable class-methods-use-this */
+class IteratorChain extends BaseChain {
+    serpApiKey;
+    tools;
+    constructor(input) {
+        super(input);
+        this.serpApiKey = input.serpApiKey;
+        this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
+        const llmChain = this.newLlmChain();
+        const agent = new ZeroShotAgent({
+            llmChain,
+        });
+        this.chain = new AgentExecutor({
+            tools: this.tools,
+            agent,
+        });
+    }
+    getPromptTemplate() {
+        const toolSpec = readTemplate('tool-spec.txt');
+        const iterateToolPrompt = Handlebars.compile(readTemplate('iterate-tool-prompt.hbs'))({
+            toolSpec,
+        });
+        const template = Handlebars.compile(readTemplate('executor-prompt.hbs'))({
+            prompt: iterateToolPrompt,
+        });
+        return new PromptTemplate({
+            template,
+            inputVariables: [
+                'tool',
+                'runLogs',
+                'tools',
+                'toolNames',
+                'agent_scratchpad',
+            ],
+        });
+    }
+    getChainValues({ tool, logs }) {
+        return {
+            tool: JSON.stringify(tool),
+            runLogs: logs,
+            tools: this.tools
+                .map(({ name, description }) => `${name}: ${description}`)
+                .join('\n'),
+            toolNames: this.tools.map(({ name }) => name).join(', '),
+        };
+    }
+    getOutputKey() {
+        return 'output';
+    }
+}
+
+/* eslint-disable class-methods-use-this */
+class SimpleChain extends BaseChain {
+    constructor(input) {
+        super(input);
+        this.chain = this.newLlmChain();
+    }
+    getPromptTemplate() {
+        const toolSpec = readTemplate('tool-spec.txt');
+        const template = Handlebars.compile(readTemplate('generate-tool-prompt.hbs'))({ toolSpec });
+        return new PromptTemplate({
+            template,
+            inputVariables: ['generateToolInput'],
+        });
+    }
+    getChainValues(input) {
+        return { generateToolInput: JSON.stringify(input) };
+    }
+    getOutputKey() {
+        return 'text';
     }
 }
 
 class Toolkit {
-    openAIApiKey;
-    serpApiKey;
-    tools;
     // Chain used to generate tool without use of other tools
     generatorChain;
     // Chain used to generate tool using an agent that executes other tools
     executorChain;
+    iteratorChain;
     constructor(input) {
-        this.openAIApiKey = input?.openAIApiKey;
-        this.serpApiKey = input?.serpApiKey;
-        this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
-        const generatorPromptText = readFileSync(resolveFromSrc('templates/generate-tool-prompt.txt')).toString();
-        this.constructGeneratorChain(generatorPromptText);
-        this.constructExecutorChain(generatorPromptText);
+        const openAIApiKey = input?.openAIApiKey || process.env['OPENAI_API_KEY'];
+        if (!openAIApiKey) {
+            throw new Error('OpenAI API key not defined in params or environment');
+        }
+        const serpApiKey = input?.serpApiKey || process.env['SERP_API_KEY'];
+        if (!serpApiKey) {
+            throw new Error('Serp API key not defined in params or environment');
+        }
+        const logToConsole = input?.logToConsole || false;
+        this.generatorChain = new SimpleChain({ openAIApiKey, logToConsole });
+        this.executorChain = new ExecutorChain({
+            openAIApiKey,
+            serpApiKey,
+            logToConsole,
+        });
+        this.iteratorChain = new IteratorChain({
+            openAIApiKey,
+            serpApiKey,
+            logToConsole,
+        });
     }
     // Primary public method used to generate a tool,
     // with or without an agent executing helper tools
     async generateTool(input, withExecutor = false) {
         // Call appropriate chain
         const responseString = withExecutor
-            ? await this.callExecutor(input)
-            : await this.callGenerator(input);
+            ? await this.generatorChain.generate(input)
+            : await this.executorChain.generate(input);
+        return this.parseResponse(responseString);
+    }
+    async iterateTool(input) {
+        const responseString = await this.iteratorChain.generate(input);
+        return this.parseResponse(responseString);
+    }
+    // eslint-disable-next-line class-methods-use-this
+    parseResponse(responseString) {
         // Parse response into JSON object
         let responseObject;
         try {
             responseObject = JSON.parse(responseString);
         }
         catch (err) {
-            throw new Error(`value "text" could not be parsed as JSON: ${responseString}`);
+            throw new Error(`response could not be parsed as JSON: ${responseString}`);
         }
         // Ensure the resulting object fits expected schema
         const generatedTool = GeneratedToolSchema.parse(responseObject);
@@ -155,69 +353,6 @@ class Toolkit {
         // Add formats to tool
         const tool = new ToolFormatter(baseTool).toolWithFormats();
         return tool;
-    }
-    newLlmChain(prompt) {
-        const llm = new OpenAI({
-            modelName: 'gpt-4',
-            temperature: 0,
-            ...(this.openAIApiKey ? { openAIApiKey: this.openAIApiKey } : {}),
-        });
-        return new LLMChain({ llm, prompt });
-    }
-    constructGeneratorChain(generatorPromptText) {
-        const generatorPromptTemplate = new PromptTemplate({
-            template: generatorPromptText,
-            inputVariables: ['generateToolInput'],
-        });
-        this.generatorChain = this.newLlmChain(generatorPromptTemplate);
-    }
-    constructExecutorChain(generatorPromptText) {
-        const executorPromptText = Handlebars.compile(readFileSync(resolveFromSrc('templates/executor-prompt.hbs')).toString())({ generateToolPrompt: generatorPromptText });
-        const executorPromptTemplate = new PromptTemplate({
-            template: executorPromptText,
-            inputVariables: [
-                'generateToolInput',
-                'tools',
-                'toolNames',
-                'agent_scratchpad',
-            ],
-        });
-        const llmChain = this.newLlmChain(executorPromptTemplate);
-        const agent = new ZeroShotAgent({
-            llmChain,
-        });
-        this.executorChain = new AgentExecutor({
-            tools: this.tools,
-            agent,
-        });
-    }
-    async callGenerator(input) {
-        // Call LLM chain with our prompt and receive response
-        const generatorResponseValues = await this.generatorChain.call({
-            generateToolInput: JSON.stringify(input),
-        });
-        // Pick relevant field from response
-        const { text: responseString } = generatorResponseValues;
-        if (!responseString) {
-            throw new Error(`value "text" not returned from OpenAPI LLM chain, got values: ${generatorResponseValues}`);
-        }
-        return responseString;
-    }
-    async callExecutor(input) {
-        // Call LLM chain with our prompt and receive response
-        const executorResponseValues = await this.executorChain.call({
-            generateToolInput: JSON.stringify(input),
-            tools: this.tools
-                .map(({ name, description }) => `${name}: ${description}`)
-                .join('\n'),
-            toolNames: this.tools.map(({ name }) => name).join(', '),
-        });
-        // Pick relevant field from response
-        const { output: responseString } = executorResponseValues;
-        if (!responseString) {
-            throw new Error(`value "output" not returned from agent executor chain, got values: ${executorResponseValues}`);
-        }
-        return responseString;
     }
 }
 

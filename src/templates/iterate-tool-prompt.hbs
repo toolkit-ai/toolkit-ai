@@ -1,0 +1,15 @@
+{{toolSpec}}
+
+I will give you a tool defined in the above format, plus the output logs of an AI agent attempting to use that tool. Based on the logs, you will either accept the tool as defined or you will modify the inputSchema, outputSchema, and code fields as needed. If you accept the tool you will output it directly as it was provided. Either way your output will be one whole, valid, parseable JSON object, omitting code block markup.
+
+Here is the tool:
+
+---
+{tool}
+---
+
+And here are the logs:
+
+---
+{runLogs}
+---

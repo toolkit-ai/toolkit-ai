@@ -26,6 +26,14 @@
         ],
         "pathGroups": [
           {
+            "pattern": "Toolkit",
+            "group": "internal"
+          },
+          {
+            "pattern": "ToolFormatter",
+            "group": "internal"
+          },
+          {
             "pattern": "lib/**",
             "group": "internal"
           },

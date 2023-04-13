@@ -1,3 +1,5 @@
+import type { GenerateToolInput } from 'BaseChain';
+
 import {
   JsonPrimitiveSchema,
   JsonValueSchema,
@@ -14,7 +16,7 @@ import type {
 } from 'lib/types';
 
 import ToolFormatter from './ToolFormatter';
-import Toolkit, { type ToolkitInput, type GenerateToolInput } from './Toolkit';
+import Toolkit, { type ToolkitInput } from './Toolkit';
 
 export default Toolkit;
 export {

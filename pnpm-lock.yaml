@@ -7,6 +7,9 @@ dependencies:
   camelcase:
     specifier: ^7.0.1
     version: 7.0.1
+  commander:
+    specifier: ^10.0.0
+    version: 10.0.0
   handlebars:
     specifier: ^4.7.7
     version: 4.7.7
@@ -542,6 +545,11 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+    dev: false
+
+  /commander@10.0.0:
+    resolution: {integrity: sha512-zS5PnTI22FIRM6ylNW8G4Ap0IEOyk62fhLSD0+uHRT9McRCLGpkVNvao4bjimpK/GShynyQkFFxHhwMcETmduA==}
+    engines: {node: '>=14'}
     dev: false
 
   /concat-map@0.0.1:
