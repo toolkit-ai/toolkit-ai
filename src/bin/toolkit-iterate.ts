@@ -1,99 +1,60 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-console */
-import { spawn } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 import { program } from 'commander';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { config } from 'dotenv';
 
-import Toolkit from 'Toolkit';
+import ToolIterator from 'ToolIterator';
 import { IterateInputSchema } from 'lib/schemas';
 
-process.env['LANGCHAIN_HANDLER'] = 'langchain';
+config();
 
 interface Options {
-  json: string;
+  inputJson: string;
+  outputJs: string;
   openAIApiKey?: string | undefined;
   serpApiKey?: string | undefined;
   verbose: boolean;
 }
 
 program
-  .requiredOption('--json <path>')
+  .requiredOption(
+    '--inputJson <path>',
+    'path to json file with partial tool specification'
+  )
+  .requiredOption('--outputJs <path>', 'path to javascript output file')
   .option('--openAIApiKey <key>')
   .option('--serpApiKey <key>')
   .option('-v, --verbose', undefined, false);
 program.parse();
-const { json, openAIApiKey, serpApiKey, verbose } = program.opts<Options>();
+const options = program.opts<Options>();
 
-const inputText = readFileSync(json).toString();
+const openAIApiKey = options.openAIApiKey || process.env['OPENAI_API_KEY'];
+if (!openAIApiKey) {
+  throw new Error(
+    'OpenAI API key must be provided in --openAIApiKey argument or OPENAI_API_KEY environment variable'
+  );
+}
+
+const serpApiKey = options.serpApiKey || process.env['SERP_API_KEY'];
+if (!serpApiKey) {
+  throw new Error(
+    'Serp API key must be provided in --serpApiKey argument or SERP_API_KEY environment variable'
+  );
+}
+
+const inputText = readFileSync(options.inputJson).toString();
 const inputJson = JSON.parse(inputText);
 const input = IterateInputSchema.parse(inputJson);
-
-const toolkit = new Toolkit({
-  ...(openAIApiKey ? { openAIApiKey } : {}),
-  ...(serpApiKey ? { serpApiKey } : {}),
-  logToConsole: verbose,
+const iterator = new ToolIterator({
+  openAIApiKey,
+  serpApiKey,
+  verbose: options.verbose,
 });
 
-function runTool(langChainCode: string) {
-  return new Promise<string>((resolve, reject) => {
-    const proc = spawn(
-      `docker`,
-      [
-        'run',
-        '--rm',
-        '-i',
-        '-e',
-        `OPENAI_API_KEY=${openAIApiKey}`,
-        'public.ecr.aws/r8l0v3i5/tool-runner:latest',
-      ],
-      { stdio: ['pipe', 'pipe', 'inherit'] }
-    );
-    proc.stdin.write(langChainCode);
-    proc.stdin.end();
-
-    let output = '';
-    proc.stdout.on('data', (data) => {
-      output += data;
-    });
-
-    proc.on('exit', () => resolve(output));
-    proc.on('error', (err) => reject(err));
-  });
-}
-
-function log(msg: string) {
-  if (verbose) {
-    console.log(msg);
-  }
-}
-
 (async () => {
-  let prevCode = '';
-  let nextCode = '';
-
-  log('Generating tool...');
-  const tool = await toolkit.generateTool(input, true);
-  log(`code:\n${tool.code}\n\n`);
-
-  nextCode = tool.code;
-  let iteration = 0;
-
-  do {
-    log(`Iteration ${iteration}`);
-
-    log('Testing tool...');
-    const logs = await runTool(tool.langChainCode);
-    log(`logs:\n${logs}\n\n`);
-
-    log('Revising...');
-    const result = await toolkit.iterateTool({ tool, logs });
-    log(`code:\n${result.code}\n\n`);
-
-    prevCode = nextCode;
-    nextCode = result.code;
-    iteration += 1;
-  } while (prevCode !== nextCode);
-
-  log('Complete');
+  const tool = await iterator.iterate(input);
+  writeFileSync(options.outputJs, tool.langChainCode);
+  // eslint-disable-next-line no-console
+  console.log(`LangChain tool written to ${options.outputJs}`);
 })();

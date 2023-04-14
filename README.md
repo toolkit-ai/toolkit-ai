@@ -43,8 +43,6 @@ const toolkit = new Toolkit({
 
   console.log(tool.langChainCode);
 })();
-
-
 ```
 
 We've also made an easy library you can try out the tools you generate here: 

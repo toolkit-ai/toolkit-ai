@@ -34,6 +34,10 @@
             "group": "internal"
           },
           {
+            "pattern": "ToolIterator",
+            "group": "internal"
+          },
+          {
             "pattern": "lib/**",
             "group": "internal"
           },
