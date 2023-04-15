@@ -1,16 +1,23 @@
 import { readFileSync } from 'fs';
-import { dirname, join, resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-export function resolveFromSrc(relativePath: string) {
-  const currentFileURL = import.meta.url;
-  const currentFilePath = fileURLToPath(currentFileURL);
-  const currentDirPath = dirname(currentFilePath);
-  const rootPath = resolve(currentDirPath, '../..');
-  return join(rootPath, '/src', relativePath);
+import { findUpSync } from 'find-up';
+
+let templatesPath: string | null = null;
+
+function getTemplatesPath() {
+  if (!templatesPath) {
+    const packagePath = findUpSync('package.json');
+    if (!packagePath) {
+      throw new Error('path to package.json could not be found');
+    }
+    const packageDir = dirname(packagePath);
+    templatesPath = `${packageDir}/templates`;
+  }
+  return templatesPath;
 }
 
 export function readTemplate(name: string) {
-  const path = resolveFromSrc(`templates/${name}`);
+  const path = `${getTemplatesPath()}/${name}`;
   return readFileSync(path).toString();
 }

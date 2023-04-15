@@ -1,9 +1,8 @@
 /* eslint-disable no-await-in-loop */
 import { spawn } from 'child_process';
 
-import type { GenerateToolInput } from 'BaseChain';
-
 import Toolkit from 'Toolkit';
+import type { GenerateToolInput } from 'chains/BaseChain';
 import type { Tool } from 'lib/types';
 
 type ToolIteratorInput = {
@@ -112,7 +111,7 @@ class ToolIterator {
   }
 
   private async reviseTool(inputTool: Tool, logs: string) {
-    this.log('REVISING TOOL');
+    this.log('REVISING TOOL\n');
     const outputTool = await this.toolkit.iterateTool({
       tool: inputTool,
       logs,

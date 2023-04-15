@@ -1,4 +1,4 @@
-import type { GenerateToolInput } from 'BaseChain';
+import type { GenerateToolInput } from 'chains/BaseChain';
 import type { Tool } from 'lib/types';
 type ToolIteratorInput = {
     openAIApiKey: string;

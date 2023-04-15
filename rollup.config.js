@@ -9,4 +9,12 @@ export default [
     },
     plugins: [typescript()],
   },
+  {
+    input: 'src/toolkit-iterate.ts',
+    output: {
+      dir: 'dist',
+      format: 'es',
+    },
+    plugins: [typescript()],
+  },
 ];

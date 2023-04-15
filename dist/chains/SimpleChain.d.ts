@@ -1,6 +1,6 @@
-import BaseChain, { BaseChainInput, GenerateToolInput } from 'BaseChain';
-import { PromptTemplate } from 'langchain';
+import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
+import BaseChain, { BaseChainInput, GenerateToolInput } from 'chains/BaseChain';
 declare class SimpleChain extends BaseChain<GenerateToolInput> {
     constructor(input: BaseChainInput);
     getPromptTemplate(): PromptTemplate;

@@ -1,5 +1,4 @@
-import type { GenerateToolInput } from 'BaseChain';
-
+import type { GenerateToolInput } from 'chains/BaseChain';
 import {
   JsonPrimitiveSchema,
   JsonValueSchema,

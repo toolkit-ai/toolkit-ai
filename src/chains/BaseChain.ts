@@ -1,6 +1,7 @@
-import { LLMChain, OpenAI, PromptTemplate } from 'langchain';
 import { ConsoleCallbackHandler } from 'langchain/callbacks';
-import type { BaseChain as BaseLangChain } from 'langchain/chains';
+import { LLMChain, type BaseChain as BaseLangChain } from 'langchain/chains';
+import { OpenAI } from 'langchain/llms/openai';
+import type { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 
 import type { JsonObject } from 'lib/types';

@@ -1,7 +1,5 @@
 import { Tool } from 'langchain/agents';
-import queryRegistry from 'query-registry';
-
-const { searchPackages } = queryRegistry;
+import { searchPackages } from 'query-registry';
 
 class NpmSearch extends Tool {
   override name = 'npm-search';

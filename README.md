@@ -181,3 +181,20 @@ class TemperatureConverter extends Tool {
 export default TemperatureConverter;
 ```
 </details>
+
+## Toolkit Iterator CLI
+
+If you'd like to try a longer-running tool generation process that utilizes self-evaluating agents, you can use the `toolkit-iterator` CLI:
+
+1. Ensure [Docker](https://docs.docker.com/engine/install/) is installed on your system
+2. Install this package globally: `npm install -g @heypal/toolkit-ai`
+3. Create a JSON file with your partial tool specification, something like:
+```json
+{ "name": "Adder", "description": "Adds two numbers together" }
+```
+4. Run the CLI:
+```sh
+toolkit-iterator -v --inputJson=/path/to/spec.json --outputJs=/path/to/output.js --openAIApiKey=xyz --serpApiKey=xyz
+```
+
+Your API keys can also be read from the environment, using the variables `OPENAI_API_KEY` and `SERP_API_KEY`.

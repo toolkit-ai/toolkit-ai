@@ -1,10 +1,10 @@
 import slugify from '@sindresorhus/slugify';
-import type { GenerateToolInput } from 'BaseChain';
-import ExecutorChain from 'ExecutorChain';
-import IteratorChain, { IterateToolInput } from 'IteratorChain';
-import SimpleChain from 'SimpleChain';
 
 import ToolFormatter from 'ToolFormatter';
+import type { GenerateToolInput } from 'chains/BaseChain';
+import ExecutorChain from 'chains/ExecutorChain';
+import IteratorChain, { IterateToolInput } from 'chains/IteratorChain';
+import SimpleChain from 'chains/SimpleChain';
 import { GeneratedToolSchema } from 'lib/schemas';
 import type { GeneratedTool, BaseTool, Tool } from 'lib/types';
 

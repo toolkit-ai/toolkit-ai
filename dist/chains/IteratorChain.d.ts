@@ -1,7 +1,7 @@
-import BaseChain from 'BaseChain';
-import type { ExecutorChainInput } from 'ExecutorChain';
-import { PromptTemplate } from 'langchain';
+import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
+import BaseChain from 'chains/BaseChain';
+import type { ExecutorChainInput } from 'chains/ExecutorChain';
 import type { Tool } from 'lib/types';
 export type IterateToolInput = {
     tool: Tool;

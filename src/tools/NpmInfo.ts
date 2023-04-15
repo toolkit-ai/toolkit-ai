@@ -1,7 +1,5 @@
 import { Tool } from 'langchain/agents';
-import queryRegistry from 'query-registry';
-
-const { getPackument } = queryRegistry;
+import { getPackument } from 'query-registry';
 
 class NpmInfo extends Tool {
   override name = 'npm-info';

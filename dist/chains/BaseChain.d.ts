@@ -1,5 +1,5 @@
-import { LLMChain, PromptTemplate } from 'langchain';
-import type { BaseChain as BaseLangChain } from 'langchain/chains';
+import { LLMChain, type BaseChain as BaseLangChain } from 'langchain/chains';
+import type { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 import type { JsonObject } from 'lib/types';
 export type BaseChainInput = {

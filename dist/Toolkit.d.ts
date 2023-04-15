@@ -1,5 +1,5 @@
-import type { GenerateToolInput } from 'BaseChain';
-import { IterateToolInput } from 'IteratorChain';
+import type { GenerateToolInput } from 'chains/BaseChain';
+import { IterateToolInput } from 'chains/IteratorChain';
 import type { Tool } from 'lib/types';
 export type ToolkitInput = {
     openAIApiKey?: string;

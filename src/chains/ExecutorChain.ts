@@ -1,23 +1,23 @@
 /* eslint-disable class-methods-use-this */
-import BaseChain from 'BaseChain';
-import type { ExecutorChainInput } from 'ExecutorChain';
 import Handlebars from 'handlebars';
-import { PromptTemplate } from 'langchain';
 import { AgentExecutor, ZeroShotAgent } from 'langchain/agents';
+import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 import { SerpAPI, Tool as LangChainTool } from 'langchain/tools';
 
-import type { Tool } from 'lib/types';
+import BaseChain, {
+  GenerateToolInput,
+  type BaseChainInput,
+} from 'chains/BaseChain';
 import { readTemplate } from 'lib/util';
 import NpmInfo from 'tools/NpmInfo';
 import NpmSearch from 'tools/NpmSearch';
 
-export type IterateToolInput = {
-  tool: Tool;
-  logs: string;
+export type ExecutorChainInput = BaseChainInput & {
+  serpApiKey: string;
 };
 
-class IteratorChain extends BaseChain<IterateToolInput> {
+class ExecutorChain extends BaseChain<GenerateToolInput> {
   private serpApiKey: string;
 
   private tools: LangChainTool[];
@@ -39,19 +39,16 @@ class IteratorChain extends BaseChain<IterateToolInput> {
 
   override getPromptTemplate(): PromptTemplate {
     const toolSpec = readTemplate('tool-spec.txt');
-    const iterateToolPrompt = Handlebars.compile(
-      readTemplate('iterate-tool-prompt.hbs')
-    )({
-      toolSpec,
-    });
+    const generateToolPrompt = Handlebars.compile(
+      readTemplate('generate-tool-prompt.hbs')
+    )({ toolSpec });
     const template = Handlebars.compile(readTemplate('executor-prompt.hbs'))({
-      prompt: iterateToolPrompt,
+      prompt: generateToolPrompt,
     });
     return new PromptTemplate({
       template,
       inputVariables: [
-        'tool',
-        'runLogs',
+        'generateToolInput',
         'tools',
         'toolNames',
         'agent_scratchpad',
@@ -59,10 +56,9 @@ class IteratorChain extends BaseChain<IterateToolInput> {
     });
   }
 
-  override getChainValues({ tool, logs }: IterateToolInput): ChainValues {
+  override getChainValues(input: GenerateToolInput): ChainValues {
     return {
-      tool: JSON.stringify(tool),
-      runLogs: logs,
+      generateToolInput: JSON.stringify(input),
       tools: this.tools
         .map(({ name, description }) => `${name}: ${description}`)
         .join('\n'),
@@ -75,4 +71,4 @@ class IteratorChain extends BaseChain<IterateToolInput> {
   }
 }
 
-export default IteratorChain;
+export default ExecutorChain;

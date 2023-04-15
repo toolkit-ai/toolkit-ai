@@ -1,9 +1,9 @@
 /* eslint-disable class-methods-use-this */
-import BaseChain, { BaseChainInput, GenerateToolInput } from 'BaseChain';
 import Handlebars from 'handlebars';
-import { PromptTemplate } from 'langchain';
+import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 
+import BaseChain, { BaseChainInput, GenerateToolInput } from 'chains/BaseChain';
 import { readTemplate } from 'lib/util';
 
 class SimpleChain extends BaseChain<GenerateToolInput> {

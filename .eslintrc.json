@@ -42,6 +42,10 @@
             "group": "internal"
           },
           {
+            "pattern": "chains/**",
+            "group": "internal"
+          },
+          {
             "pattern": "tools/**",
             "group": "internal"
           }
