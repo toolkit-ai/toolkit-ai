@@ -7,6 +7,7 @@ import camelCase from 'camelcase';
 import Handlebars from 'handlebars';
 import { format } from 'prettier';
 import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { findUpSync } from 'find-up';
 import { Tool, ZeroShotAgent, AgentExecutor } from 'langchain/agents';
 import { PromptTemplate } from 'langchain/prompts';
@@ -20,7 +21,11 @@ import { z } from 'zod';
 let templatesPath = null;
 function getTemplatesPath() {
     if (!templatesPath) {
-        const packagePath = findUpSync('package.json');
+        const filePath = fileURLToPath(import.meta.url);
+        const cwd = dirname(filePath);
+        const packagePath = findUpSync('package.json', {
+            cwd,
+        });
         if (!packagePath) {
             throw new Error('path to package.json could not be found');
         }
