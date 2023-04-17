@@ -2,7 +2,7 @@
 import { spawn } from 'child_process';
 
 import Toolkit from 'Toolkit';
-import type { GenerateToolInput } from 'chains/BaseChain';
+import type { GenerateToolInput } from 'chains/BaseToolGenerationChain';
 import type { Tool } from 'lib/types';
 
 type ToolIteratorInput = {

@@ -5,24 +5,24 @@ import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 import { SerpAPI, Tool as LangChainTool } from 'langchain/tools';
 
-import BaseChain, {
+import BaseToolGenerationChain, {
   GenerateToolInput,
-  type BaseChainInput,
-} from 'chains/BaseChain';
+  type BaseToolGenerationChainInput,
+} from 'chains/BaseToolGenerationChain';
 import { readTemplate } from 'lib/util';
 import NpmInfo from 'tools/NpmInfo';
 import NpmSearch from 'tools/NpmSearch';
 
-export type ExecutorChainInput = BaseChainInput & {
+export type ExecutorToolGenerationChainInput = BaseToolGenerationChainInput & {
   serpApiKey: string;
 };
 
-class ExecutorChain extends BaseChain<GenerateToolInput> {
+class ExecutorToolGenerationChain extends BaseToolGenerationChain<GenerateToolInput> {
   private serpApiKey: string;
 
   private tools: LangChainTool[];
 
-  constructor(input: ExecutorChainInput) {
+  constructor(input: ExecutorToolGenerationChainInput) {
     super(input);
     this.serpApiKey = input.serpApiKey;
     this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
@@ -71,4 +71,4 @@ class ExecutorChain extends BaseChain<GenerateToolInput> {
   }
 }
 
-export default ExecutorChain;
+export default ExecutorToolGenerationChain;

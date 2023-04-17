@@ -1,5 +1,5 @@
-import type { GenerateToolInput } from 'chains/BaseChain';
-import { IterateToolInput } from 'chains/IteratorChain';
+import type { GenerateToolInput } from 'chains/BaseToolGenerationChain';
+import { IterateToolInput } from 'chains/IterativeToolGenerationChain';
 import type { Tool } from 'lib/types';
 export type ToolkitInput = {
     openAIApiKey?: string;
@@ -7,9 +7,9 @@ export type ToolkitInput = {
     logToConsole?: boolean;
 };
 declare class Toolkit {
-    private generatorChain;
-    private executorChain;
-    private iteratorChain;
+    private simpleToolGenerationChain;
+    private executorToolGenerationChain;
+    private iterativeToolGenerationChain;
     constructor(input?: ToolkitInput);
     generateTool(input: GenerateToolInput, withExecutor?: boolean): Promise<Tool>;
     iterateTool(input: IterateToolInput): Promise<Tool>;

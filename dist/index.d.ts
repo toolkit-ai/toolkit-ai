@@ -1,4 +1,4 @@
-import type { GenerateToolInput } from 'chains/BaseChain';
+import type { GenerateToolInput } from 'chains/BaseToolGenerationChain';
 import { JsonPrimitiveSchema, JsonValueSchema, JsonObjectSchema, GeneratedToolSchema } from 'lib/schemas';
 import type { JsonValue, JsonArray, JsonObject, GeneratedTool, BaseTool, Tool } from 'lib/types';
 import ToolFormatter from './ToolFormatter';

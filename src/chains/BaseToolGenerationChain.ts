@@ -1,12 +1,12 @@
 import { ConsoleCallbackHandler } from 'langchain/callbacks';
-import { LLMChain, type BaseChain as BaseLangChain } from 'langchain/chains';
+import { LLMChain, type BaseChain } from 'langchain/chains';
 import { OpenAI } from 'langchain/llms/openai';
 import type { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 
 import type { JsonObject } from 'lib/types';
 
-export type BaseChainInput = {
+export type BaseToolGenerationChainInput = {
   openAIApiKey: string;
   logToConsole: boolean;
 };
@@ -18,14 +18,14 @@ export type GenerateToolInput = {
   outputSchema?: JsonObject | undefined;
 };
 
-abstract class BaseChain<T> {
+abstract class BaseToolGenerationChain<T> {
   private openAIApiKey: string;
 
   private logToConsole: boolean;
 
-  protected chain!: BaseLangChain;
+  protected chain!: BaseChain;
 
-  constructor(input: BaseChainInput) {
+  constructor(input: BaseToolGenerationChainInput) {
     this.openAIApiKey = input.openAIApiKey;
     this.logToConsole = input.logToConsole;
   }
@@ -72,4 +72,4 @@ abstract class BaseChain<T> {
   }
 }
 
-export default BaseChain;
+export default BaseToolGenerationChain;

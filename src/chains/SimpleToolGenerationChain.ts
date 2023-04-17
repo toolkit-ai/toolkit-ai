@@ -3,11 +3,14 @@ import Handlebars from 'handlebars';
 import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 
-import BaseChain, { BaseChainInput, GenerateToolInput } from 'chains/BaseChain';
+import BaseToolGenerationChain, {
+  BaseToolGenerationChainInput,
+  GenerateToolInput,
+} from 'chains/BaseToolGenerationChain';
 import { readTemplate } from 'lib/util';
 
-class SimpleChain extends BaseChain<GenerateToolInput> {
-  constructor(input: BaseChainInput) {
+class SimpleToolGenerationChain extends BaseToolGenerationChain<GenerateToolInput> {
+  constructor(input: BaseToolGenerationChainInput) {
     super(input);
     this.chain = this.newLlmChain();
   }
@@ -32,4 +35,4 @@ class SimpleChain extends BaseChain<GenerateToolInput> {
   }
 }
 
-export default SimpleChain;
+export default SimpleToolGenerationChain;

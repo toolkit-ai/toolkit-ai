@@ -95,7 +95,7 @@ class ToolFormatter {
     }
 }
 
-class BaseChain {
+class BaseToolGenerationChain {
     openAIApiKey;
     logToConsole;
     chain;
@@ -178,7 +178,7 @@ class NpmSearch extends Tool {
 }
 
 /* eslint-disable class-methods-use-this */
-class ExecutorChain extends BaseChain {
+class ExecutorToolGenerationChain extends BaseToolGenerationChain {
     serpApiKey;
     tools;
     constructor(input) {
@@ -225,7 +225,7 @@ class ExecutorChain extends BaseChain {
 }
 
 /* eslint-disable class-methods-use-this */
-class IteratorChain extends BaseChain {
+class IterativeToolGenerationChain extends BaseToolGenerationChain {
     serpApiKey;
     tools;
     constructor(input) {
@@ -276,7 +276,7 @@ class IteratorChain extends BaseChain {
 }
 
 /* eslint-disable class-methods-use-this */
-class SimpleChain extends BaseChain {
+class SimpleToolGenerationChain extends BaseToolGenerationChain {
     constructor(input) {
         super(input);
         this.chain = this.newLlmChain();
@@ -299,10 +299,11 @@ class SimpleChain extends BaseChain {
 
 class Toolkit {
     // Chain used to generate tool without use of other tools
-    generatorChain;
+    simpleToolGenerationChain;
     // Chain used to generate tool using an agent that executes other tools
-    executorChain;
-    iteratorChain;
+    executorToolGenerationChain;
+    // Chain used to generate tool using iterative executor
+    iterativeToolGenerationChain;
     constructor(input) {
         const openAIApiKey = input?.openAIApiKey || process.env['OPENAI_API_KEY'];
         if (!openAIApiKey) {
@@ -313,13 +314,16 @@ class Toolkit {
             throw new Error('Serp API key not defined in params or environment');
         }
         const logToConsole = input?.logToConsole || false;
-        this.generatorChain = new SimpleChain({ openAIApiKey, logToConsole });
-        this.executorChain = new ExecutorChain({
+        this.simpleToolGenerationChain = new SimpleToolGenerationChain({
+            openAIApiKey,
+            logToConsole,
+        });
+        this.executorToolGenerationChain = new ExecutorToolGenerationChain({
             openAIApiKey,
             serpApiKey,
             logToConsole,
         });
-        this.iteratorChain = new IteratorChain({
+        this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
             openAIApiKey,
             serpApiKey,
             logToConsole,
@@ -330,12 +334,12 @@ class Toolkit {
     async generateTool(input, withExecutor = false) {
         // Call appropriate chain
         const responseString = withExecutor
-            ? await this.generatorChain.generate(input)
-            : await this.executorChain.generate(input);
+            ? await this.simpleToolGenerationChain.generate(input)
+            : await this.executorToolGenerationChain.generate(input);
         return this.parseResponse(responseString);
     }
     async iterateTool(input) {
-        const responseString = await this.iteratorChain.generate(input);
+        const responseString = await this.iterativeToolGenerationChain.generate(input);
         return this.parseResponse(responseString);
     }
     // eslint-disable-next-line class-methods-use-this

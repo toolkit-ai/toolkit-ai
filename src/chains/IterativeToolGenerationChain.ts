@@ -5,8 +5,8 @@ import { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 import { SerpAPI, Tool as LangChainTool } from 'langchain/tools';
 
-import BaseChain from 'chains/BaseChain';
-import type { ExecutorChainInput } from 'chains/ExecutorChain';
+import BaseToolGenerationChain from 'chains/BaseToolGenerationChain';
+import type { ExecutorToolGenerationChainInput } from 'chains/ExecutorToolGenerationChain';
 import type { Tool } from 'lib/types';
 import { readTemplate } from 'lib/util';
 import NpmInfo from 'tools/NpmInfo';
@@ -17,12 +17,12 @@ export type IterateToolInput = {
   logs: string;
 };
 
-class IteratorChain extends BaseChain<IterateToolInput> {
+class IterativeToolGenerationChain extends BaseToolGenerationChain<IterateToolInput> {
   private serpApiKey: string;
 
   private tools: LangChainTool[];
 
-  constructor(input: ExecutorChainInput) {
+  constructor(input: ExecutorToolGenerationChainInput) {
     super(input);
     this.serpApiKey = input.serpApiKey;
     this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
@@ -75,4 +75,4 @@ class IteratorChain extends BaseChain<IterateToolInput> {
   }
 }
 
-export default IteratorChain;
+export default IterativeToolGenerationChain;

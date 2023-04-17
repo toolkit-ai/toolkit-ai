@@ -1,10 +1,12 @@
 import slugify from '@sindresorhus/slugify';
 
 import ToolFormatter from 'ToolFormatter';
-import type { GenerateToolInput } from 'chains/BaseChain';
-import ExecutorChain from 'chains/ExecutorChain';
-import IteratorChain, { IterateToolInput } from 'chains/IteratorChain';
-import SimpleChain from 'chains/SimpleChain';
+import type { GenerateToolInput } from 'chains/BaseToolGenerationChain';
+import ExecutorToolGenerationChain from 'chains/ExecutorToolGenerationChain';
+import IterativeToolGenerationChain, {
+  IterateToolInput,
+} from 'chains/IterativeToolGenerationChain';
+import SimpleToolGenerationChain from 'chains/SimpleToolGenerationChain';
 import { GeneratedToolSchema } from 'lib/schemas';
 import type { GeneratedTool, BaseTool, Tool } from 'lib/types';
 
@@ -16,12 +18,13 @@ export type ToolkitInput = {
 
 class Toolkit {
   // Chain used to generate tool without use of other tools
-  private generatorChain: SimpleChain;
+  private simpleToolGenerationChain: SimpleToolGenerationChain;
 
   // Chain used to generate tool using an agent that executes other tools
-  private executorChain: ExecutorChain;
+  private executorToolGenerationChain: ExecutorToolGenerationChain;
 
-  private iteratorChain: IteratorChain;
+  // Chain used to generate tool using iterative executor
+  private iterativeToolGenerationChain: IterativeToolGenerationChain;
 
   constructor(input?: ToolkitInput) {
     const openAIApiKey = input?.openAIApiKey || process.env['OPENAI_API_KEY'];
@@ -36,13 +39,16 @@ class Toolkit {
 
     const logToConsole = input?.logToConsole || false;
 
-    this.generatorChain = new SimpleChain({ openAIApiKey, logToConsole });
-    this.executorChain = new ExecutorChain({
+    this.simpleToolGenerationChain = new SimpleToolGenerationChain({
+      openAIApiKey,
+      logToConsole,
+    });
+    this.executorToolGenerationChain = new ExecutorToolGenerationChain({
       openAIApiKey,
       serpApiKey,
       logToConsole,
     });
-    this.iteratorChain = new IteratorChain({
+    this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
       openAIApiKey,
       serpApiKey,
       logToConsole,
@@ -57,14 +63,15 @@ class Toolkit {
   ): Promise<Tool> {
     // Call appropriate chain
     const responseString: string = withExecutor
-      ? await this.generatorChain.generate(input)
-      : await this.executorChain.generate(input);
+      ? await this.simpleToolGenerationChain.generate(input)
+      : await this.executorToolGenerationChain.generate(input);
 
     return this.parseResponse(responseString);
   }
 
   async iterateTool(input: IterateToolInput): Promise<Tool> {
-    const responseString: string = await this.iteratorChain.generate(input);
+    const responseString: string =
+      await this.iterativeToolGenerationChain.generate(input);
     return this.parseResponse(responseString);
   }
 

@@ -1,8 +1,8 @@
-import { LLMChain, type BaseChain as BaseLangChain } from 'langchain/chains';
+import { LLMChain, type BaseChain } from 'langchain/chains';
 import type { PromptTemplate } from 'langchain/prompts';
 import type { ChainValues } from 'langchain/schema';
 import type { JsonObject } from 'lib/types';
-export type BaseChainInput = {
+export type BaseToolGenerationChainInput = {
     openAIApiKey: string;
     logToConsole: boolean;
 };
@@ -12,16 +12,16 @@ export type GenerateToolInput = {
     inputSchema?: JsonObject | undefined;
     outputSchema?: JsonObject | undefined;
 };
-declare abstract class BaseChain<T> {
+declare abstract class BaseToolGenerationChain<T> {
     private openAIApiKey;
     private logToConsole;
-    protected chain: BaseLangChain;
-    constructor(input: BaseChainInput);
+    protected chain: BaseChain;
+    constructor(input: BaseToolGenerationChainInput);
     generate(input: T): Promise<any>;
     abstract getPromptTemplate(): PromptTemplate;
     abstract getChainValues(input: T): ChainValues;
     abstract getOutputKey(): string;
     protected newLlmChain(): LLMChain;
 }
-export default BaseChain;
-//# sourceMappingURL=BaseChain.d.ts.map
+export default BaseToolGenerationChain;
+//# sourceMappingURL=BaseToolGenerationChain.d.ts.map
