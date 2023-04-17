@@ -182,9 +182,9 @@ export default TemperatureConverter;
 ```
 </details>
 
-## Toolkit Iterator CLI
+## Toolkit Iterate CLI
 
-If you'd like to try a longer-running tool generation process that utilizes self-evaluating agents, you can use the `toolkit-iterator` CLI:
+If you'd like to try a longer-running tool generation process that utilizes self-evaluating agents, you can use the `toolkit-iterate` CLI:
 
 1. Ensure [Docker](https://docs.docker.com/engine/install/) is installed on your system
 2. Install this package globally: `npm install -g @heypal/toolkit-ai`
@@ -194,7 +194,7 @@ If you'd like to try a longer-running tool generation process that utilizes self
 ```
 4. Run the CLI:
 ```sh
-toolkit-iterator -v --inputJson=/path/to/spec.json --outputJs=/path/to/output.js --openAIApiKey=xyz --serpApiKey=xyz
+toolkit-iterate -v --inputJson=/path/to/spec.json --outputJs=/path/to/output.js --openAIApiKey=xyz --serpApiKey=xyz
 ```
 
 Your API keys can also be read from the environment, using the variables `OPENAI_API_KEY` and `SERP_API_KEY`.
