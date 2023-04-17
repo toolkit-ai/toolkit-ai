@@ -22,4 +22,20 @@ export declare const GeneratedToolSchema: z.ZodObject<{
     inputSchema: Record<string, JsonValue>;
     outputSchema: Record<string, JsonValue>;
 }>;
+export declare const IterateInputSchema: z.ZodObject<{
+    name: z.ZodString;
+    description: z.ZodString;
+    inputSchema: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodType<JsonValue, z.ZodTypeDef, JsonValue>>>;
+    outputSchema: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodType<JsonValue, z.ZodTypeDef, JsonValue>>>;
+}, "strip", z.ZodTypeAny, {
+    name: string;
+    description: string;
+    inputSchema?: Record<string, JsonValue> | undefined;
+    outputSchema?: Record<string, JsonValue> | undefined;
+}, {
+    name: string;
+    description: string;
+    inputSchema?: Record<string, JsonValue> | undefined;
+    outputSchema?: Record<string, JsonValue> | undefined;
+}>;
 //# sourceMappingURL=schemas.d.ts.map

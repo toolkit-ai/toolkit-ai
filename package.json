@@ -5,6 +5,9 @@
   "repository": "https://github.com/hey-pal/toolkit-ai",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "toolkit-iterate": "dist/toolkit-iterate.js"
+  },
   "type": "module",
   "scripts": {
     "lint": "eslint .",
@@ -26,24 +29,32 @@
     "@tsconfig/node18-strictest-esm": "^1.0.1",
     "@types/node": "^18.15.11",
     "@types/prettier": "^2.7.2",
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "@typescript-eslint/parser": "^5.57.1",
-    "eslint": "^8.37.0",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.38.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
     "husky": "^8.0.3",
     "rollup": "^3.20.2",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.4"
   },
   "dependencies": {
     "@sindresorhus/slugify": "^2.2.0",
     "camelcase": "^7.0.1",
+    "commander": "^10.0.0",
+    "find-up": "^6.3.0",
     "handlebars": "^4.7.7",
-    "langchain": "^0.0.49",
+    "langchain": "^0.0.56",
     "prettier": "^2.8.7",
-    "query-registry": "^2.6.0",
+    "query-registry": "2.6.0",
     "zod": "^3.21.4"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "query-registry@2.6.0": "patches/query-registry@2.6.0.patch"
+    }
   }
 }

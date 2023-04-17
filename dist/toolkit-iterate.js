@@ -1,12 +1,14 @@
-import { z } from 'zod';
+import { readFileSync, writeFileSync } from 'fs';
+import { program } from 'commander';
+import { config } from 'dotenv';
+import { spawn } from 'child_process';
+import slugify from '@sindresorhus/slugify';
 import camelCase from 'camelcase';
 import Handlebars from 'handlebars';
 import { format } from 'prettier';
-import { readFileSync } from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { findUpSync } from 'find-up';
-import slugify from '@sindresorhus/slugify';
 import { Tool, ZeroShotAgent, AgentExecutor } from 'langchain/agents';
 import { PromptTemplate } from 'langchain/prompts';
 import { SerpAPI } from 'langchain/tools';
@@ -14,32 +16,7 @@ import { ConsoleCallbackHandler } from 'langchain/callbacks';
 import { LLMChain } from 'langchain/chains';
 import { OpenAI } from 'langchain/llms/openai';
 import { getPackument, searchPackages } from 'query-registry';
-
-const JsonPrimitiveSchema = z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-]);
-const JsonValueSchema = z.lazy(() => z.union([
-    JsonPrimitiveSchema,
-    z.array(JsonValueSchema),
-    z.record(JsonValueSchema),
-]));
-const JsonObjectSchema = z.record(JsonValueSchema);
-const GeneratedToolSchema = z.object({
-    name: z.string(),
-    description: z.string(),
-    inputSchema: JsonObjectSchema,
-    outputSchema: JsonObjectSchema,
-    code: z.string(),
-});
-z.object({
-    name: z.string(),
-    description: z.string(),
-    inputSchema: z.optional(JsonObjectSchema),
-    outputSchema: z.optional(JsonObjectSchema),
-});
+import { z } from 'zod';
 
 let templatesPath = null;
 function getTemplatesPath() {
@@ -302,6 +279,32 @@ class SimpleToolGenerationChain extends BaseToolGenerationChain {
     }
 }
 
+const JsonPrimitiveSchema = z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+]);
+const JsonValueSchema = z.lazy(() => z.union([
+    JsonPrimitiveSchema,
+    z.array(JsonValueSchema),
+    z.record(JsonValueSchema),
+]));
+const JsonObjectSchema = z.record(JsonValueSchema);
+const GeneratedToolSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    inputSchema: JsonObjectSchema,
+    outputSchema: JsonObjectSchema,
+    code: z.string(),
+});
+const IterateInputSchema = z.object({
+    name: z.string(),
+    description: z.string(),
+    inputSchema: z.optional(JsonObjectSchema),
+    outputSchema: z.optional(JsonObjectSchema),
+});
+
 class Toolkit {
     // Chain used to generate tool without use of other tools
     simpleToolGenerationChain;
@@ -370,4 +373,117 @@ class Toolkit {
     }
 }
 
-export { GeneratedToolSchema, JsonObjectSchema, JsonPrimitiveSchema, JsonValueSchema, ToolFormatter, Toolkit as default };
+/* eslint-disable no-await-in-loop */
+class ToolIterator {
+    toolkit;
+    openAIApikey;
+    verbose;
+    maxIterations;
+    constructor({ openAIApiKey, serpApiKey, verbose = false, maxIterations = 5, }) {
+        this.openAIApikey = openAIApiKey;
+        this.verbose = verbose;
+        this.maxIterations = maxIterations;
+        this.toolkit = new Toolkit({
+            openAIApiKey,
+            serpApiKey,
+            logToConsole: verbose,
+        });
+    }
+    async iterate(input) {
+        let prevTool = null;
+        let currentTool = null;
+        currentTool = await this.generateInitialTool(input);
+        let iteration = 0;
+        do {
+            this.log(`\nITERATION ${iteration}\n`);
+            const logs = await this.runTool(currentTool);
+            prevTool = currentTool;
+            currentTool = await this.reviseTool(prevTool, logs);
+            iteration += 1;
+        } while (currentTool.code !== prevTool.code &&
+            iteration < this.maxIterations);
+        const msg = iteration === this.maxIterations
+            ? `\nMAX ${this.maxIterations} ITERATIONS REACHED`
+            : '\nCOMPLETE';
+        this.log(msg);
+        return currentTool;
+    }
+    log(msg) {
+        if (this.verbose) {
+            // eslint-disable-next-line no-console
+            console.log(msg);
+        }
+    }
+    async generateInitialTool(input) {
+        this.log('GENERATING INITIAL TOOL\n');
+        const tool = await this.toolkit.generateTool(input, true);
+        this.log(`\ngenerated code:\n${tool.code}`);
+        return tool;
+    }
+    async runTool(tool) {
+        this.log('TESTING TOOL\n');
+        const logs = await new Promise((resolve, reject) => {
+            const proc = spawn(`docker`, [
+                'run',
+                '--platform',
+                'linux/amd64',
+                '--rm',
+                '-i',
+                '-e',
+                `OPENAI_API_KEY=${this.openAIApikey}`,
+                'public.ecr.aws/r8l0v3i5/tool-runner:latest',
+            ], { stdio: ['pipe', 'pipe', 'inherit'] });
+            proc.stdin.write(tool.langChainCode);
+            proc.stdin.end();
+            let output = '';
+            proc.stdout.on('data', (data) => {
+                output += data;
+            });
+            proc.on('exit', () => resolve(output));
+            proc.on('error', (err) => reject(err));
+        });
+        this.log(`logs:\n${logs}`);
+        return logs;
+    }
+    async reviseTool(inputTool, logs) {
+        this.log('REVISING TOOL\n');
+        const outputTool = await this.toolkit.iterateTool({
+            tool: inputTool,
+            logs,
+        });
+        this.log(`\ngenerated code:\n${outputTool.code}`);
+        return outputTool;
+    }
+}
+
+config();
+program
+    .requiredOption('--inputJson <path>', 'path to json file with partial tool specification')
+    .requiredOption('--outputJs <path>', 'path to javascript output file')
+    .option('--openAIApiKey <key>')
+    .option('--serpApiKey <key>')
+    .option('-v, --verbose', undefined, false);
+program.parse();
+const options = program.opts();
+const openAIApiKey = options.openAIApiKey || process.env['OPENAI_API_KEY'];
+if (!openAIApiKey) {
+    throw new Error('OpenAI API key must be provided in --openAIApiKey argument or OPENAI_API_KEY environment variable');
+}
+const serpApiKey = options.serpApiKey || process.env['SERP_API_KEY'];
+if (!serpApiKey) {
+    throw new Error('Serp API key must be provided in --serpApiKey argument or SERP_API_KEY environment variable');
+}
+const inputText = readFileSync(options.inputJson).toString();
+const inputJson = JSON.parse(inputText);
+const input = IterateInputSchema.parse(inputJson);
+const iterator = new ToolIterator({
+    openAIApiKey,
+    serpApiKey,
+    verbose: options.verbose,
+});
+(async () => {
+    const tool = await iterator.iterate(input);
+    writeFileSync(options.outputJs, tool.langChainCode);
+    // eslint-disable-next-line no-console
+    console.log(`LangChain tool written to ${options.outputJs}`);
+})();

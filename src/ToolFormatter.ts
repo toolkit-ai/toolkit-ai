@@ -1,11 +1,9 @@
-import { readFileSync } from 'fs';
-
 import camelCase from 'camelcase';
 import Handlebars from 'handlebars';
 import { format } from 'prettier';
 
 import type { BaseTool, JsonValue } from 'lib/types';
-import { resolveFromSrc } from 'lib/util';
+import { readTemplate } from 'lib/util';
 
 class ToolFormatter {
   private tool: BaseTool;
@@ -15,9 +13,7 @@ class ToolFormatter {
   constructor(tool: BaseTool) {
     this.tool = tool;
 
-    const langchainTemplateString = readFileSync(
-      resolveFromSrc('templates/langchain-tool.hbs')
-    ).toString();
+    const langchainTemplateString = readTemplate('langchain-tool.hbs');
     this.langchainTemplate = Handlebars.compile(langchainTemplateString);
   }
 

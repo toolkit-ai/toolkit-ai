@@ -1,56 +1,58 @@
-import { readFileSync } from 'fs';
-
 import slugify from '@sindresorhus/slugify';
-import ToolFormatter from 'ToolFormatter';
-import Handlebars from 'handlebars';
-import { LLMChain, OpenAI } from 'langchain';
-import { AgentExecutor, ZeroShotAgent } from 'langchain/agents';
-import { PromptTemplate } from 'langchain/prompts';
-import type { ChainValues } from 'langchain/schema';
-import { SerpAPI, Tool as LangChainTool } from 'langchain/tools';
 
+import ToolFormatter from 'ToolFormatter';
+import type { GenerateToolInput } from 'chains/BaseToolGenerationChain';
+import ExecutorToolGenerationChain from 'chains/ExecutorToolGenerationChain';
+import IterativeToolGenerationChain, {
+  IterateToolInput,
+} from 'chains/IterativeToolGenerationChain';
+import SimpleToolGenerationChain from 'chains/SimpleToolGenerationChain';
 import { GeneratedToolSchema } from 'lib/schemas';
-import type { GeneratedTool, JsonObject, BaseTool, Tool } from 'lib/types';
-import { resolveFromSrc } from 'lib/util';
-import NpmInfo from 'tools/NpmInfo';
-import NpmSearch from 'tools/NpmSearch';
+import type { GeneratedTool, BaseTool, Tool } from 'lib/types';
 
 export type ToolkitInput = {
   openAIApiKey?: string;
   serpApiKey?: string;
-};
-
-export type GenerateToolInput = {
-  name: string;
-  description: string;
-  inputSchema?: JsonObject | undefined;
-  outputSchema?: JsonObject | undefined;
+  logToConsole?: boolean;
 };
 
 class Toolkit {
-  private openAIApiKey: string | undefined;
-
-  private serpApiKey: string | undefined;
-
-  private tools: LangChainTool[];
-
   // Chain used to generate tool without use of other tools
-  private generatorChain!: LLMChain;
+  private simpleToolGenerationChain: SimpleToolGenerationChain;
 
   // Chain used to generate tool using an agent that executes other tools
-  private executorChain!: AgentExecutor;
+  private executorToolGenerationChain: ExecutorToolGenerationChain;
+
+  // Chain used to generate tool using iterative executor
+  private iterativeToolGenerationChain: IterativeToolGenerationChain;
 
   constructor(input?: ToolkitInput) {
-    this.openAIApiKey = input?.openAIApiKey;
-    this.serpApiKey = input?.serpApiKey;
+    const openAIApiKey = input?.openAIApiKey || process.env['OPENAI_API_KEY'];
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not defined in params or environment');
+    }
 
-    this.tools = [new NpmSearch(), new NpmInfo(), new SerpAPI(this.serpApiKey)];
+    const serpApiKey = input?.serpApiKey || process.env['SERP_API_KEY'];
+    if (!serpApiKey) {
+      throw new Error('Serp API key not defined in params or environment');
+    }
 
-    const generatorPromptText = readFileSync(
-      resolveFromSrc('templates/generate-tool-prompt.txt')
-    ).toString();
-    this.constructGeneratorChain(generatorPromptText);
-    this.constructExecutorChain(generatorPromptText);
+    const logToConsole = input?.logToConsole || false;
+
+    this.simpleToolGenerationChain = new SimpleToolGenerationChain({
+      openAIApiKey,
+      logToConsole,
+    });
+    this.executorToolGenerationChain = new ExecutorToolGenerationChain({
+      openAIApiKey,
+      serpApiKey,
+      logToConsole,
+    });
+    this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
+      openAIApiKey,
+      serpApiKey,
+      logToConsole,
+    });
   }
 
   // Primary public method used to generate a tool,
@@ -61,16 +63,27 @@ class Toolkit {
   ): Promise<Tool> {
     // Call appropriate chain
     const responseString: string = withExecutor
-      ? await this.callExecutor(input)
-      : await this.callGenerator(input);
+      ? await this.simpleToolGenerationChain.generate(input)
+      : await this.executorToolGenerationChain.generate(input);
 
+    return this.parseResponse(responseString);
+  }
+
+  async iterateTool(input: IterateToolInput): Promise<Tool> {
+    const responseString: string =
+      await this.iterativeToolGenerationChain.generate(input);
+    return this.parseResponse(responseString);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  private parseResponse(responseString: string) {
     // Parse response into JSON object
     let responseObject: any;
     try {
       responseObject = JSON.parse(responseString);
     } catch (err) {
       throw new Error(
-        `value "text" could not be parsed as JSON: ${responseString}`
+        `response could not be parsed as JSON: ${responseString}`
       );
     }
 
@@ -87,85 +100,6 @@ class Toolkit {
     // Add formats to tool
     const tool: Tool = new ToolFormatter(baseTool).toolWithFormats();
     return tool;
-  }
-
-  private newLlmChain(prompt: PromptTemplate) {
-    const llm = new OpenAI({
-      modelName: 'gpt-4',
-      temperature: 0,
-      ...(this.openAIApiKey ? { openAIApiKey: this.openAIApiKey } : {}),
-    });
-    return new LLMChain({ llm, prompt });
-  }
-
-  private constructGeneratorChain(generatorPromptText: string) {
-    const generatorPromptTemplate = new PromptTemplate({
-      template: generatorPromptText,
-      inputVariables: ['generateToolInput'],
-    });
-    this.generatorChain = this.newLlmChain(generatorPromptTemplate);
-  }
-
-  private constructExecutorChain(generatorPromptText: string) {
-    const executorPromptText = Handlebars.compile(
-      readFileSync(resolveFromSrc('templates/executor-prompt.hbs')).toString()
-    )({ generateToolPrompt: generatorPromptText });
-    const executorPromptTemplate = new PromptTemplate({
-      template: executorPromptText,
-      inputVariables: [
-        'generateToolInput',
-        'tools',
-        'toolNames',
-        'agent_scratchpad',
-      ],
-    });
-
-    const llmChain = this.newLlmChain(executorPromptTemplate);
-    const agent = new ZeroShotAgent({
-      llmChain,
-    });
-    this.executorChain = new AgentExecutor({
-      tools: this.tools,
-      agent,
-    });
-  }
-
-  private async callGenerator(input: GenerateToolInput): Promise<string> {
-    // Call LLM chain with our prompt and receive response
-    const generatorResponseValues: ChainValues = await this.generatorChain.call(
-      {
-        generateToolInput: JSON.stringify(input),
-      }
-    );
-
-    // Pick relevant field from response
-    const { text: responseString } = generatorResponseValues;
-    if (!responseString) {
-      throw new Error(
-        `value "text" not returned from OpenAPI LLM chain, got values: ${generatorResponseValues}`
-      );
-    }
-    return responseString;
-  }
-
-  private async callExecutor(input: GenerateToolInput): Promise<string> {
-    // Call LLM chain with our prompt and receive response
-    const executorResponseValues = await this.executorChain.call({
-      generateToolInput: JSON.stringify(input),
-      tools: this.tools
-        .map(({ name, description }) => `${name}: ${description}`)
-        .join('\n'),
-      toolNames: this.tools.map(({ name }) => name).join(', '),
-    });
-
-    // Pick relevant field from response
-    const { output: responseString } = executorResponseValues;
-    if (!responseString) {
-      throw new Error(
-        `value "output" not returned from agent executor chain, got values: ${executorResponseValues}`
-      );
-    }
-    return responseString;
   }
 }
 
