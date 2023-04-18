@@ -1,6 +1,6 @@
 {
   "name": "@heypal/toolkit-ai",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Toolkit is an easy way to generate and use AI plugins. Generate code for LangChain plugins by just describing what they should do.",
   "repository": "https://github.com/hey-pal/toolkit-ai",
   "main": "dist/index.js",
