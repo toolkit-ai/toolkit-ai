@@ -31,7 +31,6 @@
     "@types/prettier": "^2.7.2",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
-    "dotenv": "^16.0.3",
     "eslint": "^8.38.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^17.0.0",
@@ -39,12 +38,14 @@
     "eslint-plugin-import": "^2.27.5",
     "husky": "^8.0.3",
     "rollup": "^3.20.2",
+    "rollup-plugin-add-shebang": "^0.3.1",
     "typescript": "^5.0.4"
   },
   "dependencies": {
     "@sindresorhus/slugify": "^2.2.0",
     "camelcase": "^7.0.1",
     "commander": "^10.0.0",
+    "dotenv": "^16.0.3",
     "find-up": "^6.3.0",
     "handlebars": "^4.7.7",
     "langchain": "^0.0.56",

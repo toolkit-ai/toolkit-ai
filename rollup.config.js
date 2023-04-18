@@ -1,4 +1,5 @@
 import typescript from '@rollup/plugin-typescript';
+import shebang from 'rollup-plugin-add-shebang';
 
 export default [
   {
@@ -15,6 +16,11 @@ export default [
       dir: 'dist',
       format: 'es',
     },
-    plugins: [typescript()],
+    plugins: [
+      typescript(),
+      shebang({
+        include: ['dist/toolkit-iterate.js'],
+      }),
+    ],
   },
 ];

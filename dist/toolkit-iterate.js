@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { readFileSync, writeFileSync } from 'fs';
 import { program } from 'commander';
 import { config } from 'dotenv';
