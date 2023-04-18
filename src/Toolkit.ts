@@ -63,8 +63,8 @@ class Toolkit {
   ): Promise<Tool> {
     // Call appropriate chain
     const responseString: string = withExecutor
-      ? await this.simpleToolGenerationChain.generate(input)
-      : await this.executorToolGenerationChain.generate(input);
+      ? await this.executorToolGenerationChain.generate(input)
+      : await this.simpleToolGenerationChain.generate(input);
 
     return this.parseResponse(responseString);
   }

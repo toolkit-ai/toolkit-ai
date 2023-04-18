@@ -17,7 +17,7 @@ import { SerpAPI } from 'langchain/tools';
 import { ConsoleCallbackHandler } from 'langchain/callbacks';
 import { LLMChain } from 'langchain/chains';
 import { OpenAI } from 'langchain/llms/openai';
-import { getPackument, searchPackages } from 'query-registry';
+import axios from 'axios';
 import { z } from 'zod';
 
 let templatesPath = null;
@@ -117,16 +117,30 @@ class BaseToolGenerationChain {
     }
 }
 
+const NPM_URL = 'https://registry.npmjs.org';
+async function searchNpm(query) {
+    const url = `${NPM_URL}/-/v1/search?text=${query}`;
+    const { data } = await axios.get(url);
+    return data.objects.map((object) => ({
+        name: object.package.name,
+        description: object.package.description,
+        score: object.score.final,
+    }));
+}
+async function getPackageReadme(name) {
+    const url = `${NPM_URL}/${name}`;
+    const { data } = await axios.get(url);
+    return data.readme;
+}
+
 class NpmInfo extends Tool {
     name = 'npm-info';
     description = 'Query NPM to fetch the README file of a particular package by name. Use this to discover implementation and usage details for a given package.';
     // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
     async _call(packageName) {
         try {
-            const results = await getPackument({
-                name: packageName,
-            });
-            return results.readme || 'No details available';
+            const readme = await getPackageReadme(packageName);
+            return readme || 'No details available';
         }
         catch (err) {
             return `Error: ${err}`;
@@ -140,20 +154,11 @@ class NpmSearch extends Tool {
     // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
     async _call(searchString) {
         try {
-            const { objects: results } = await searchPackages({
-                query: {
-                    text: searchString,
-                },
-            });
+            const results = await searchNpm(searchString);
             if (results.length < 1) {
                 return 'Error: no results';
             }
-            const info = results.map(({ package: { name, description }, score: { final } }) => ({
-                name,
-                description,
-                score: final,
-            }));
-            return JSON.stringify(info);
+            return JSON.stringify(results);
         }
         catch (err) {
             return `Error: ${err}`;
@@ -344,8 +349,8 @@ class Toolkit {
     async generateTool(input, withExecutor = false) {
         // Call appropriate chain
         const responseString = withExecutor
-            ? await this.simpleToolGenerationChain.generate(input)
-            : await this.executorToolGenerationChain.generate(input);
+            ? await this.executorToolGenerationChain.generate(input)
+            : await this.simpleToolGenerationChain.generate(input);
         return this.parseResponse(responseString);
     }
     async iterateTool(input) {

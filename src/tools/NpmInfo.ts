@@ -1,5 +1,6 @@
 import { Tool } from 'langchain/agents';
-import { getPackument } from 'query-registry';
+
+import { getPackageReadme } from 'lib/npm-registry';
 
 class NpmInfo extends Tool {
   override name = 'npm-info';
@@ -10,10 +11,8 @@ class NpmInfo extends Tool {
   // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
   protected override async _call(packageName: string): Promise<string> {
     try {
-      const results = await getPackument({
-        name: packageName,
-      });
-      return results.readme || 'No details available';
+      const readme = await getPackageReadme(packageName);
+      return readme || 'No details available';
     } catch (err) {
       return `Error: ${err}`;
     }

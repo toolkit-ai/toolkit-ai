@@ -1,5 +1,6 @@
 import { Tool } from 'langchain/agents';
-import { searchPackages } from 'query-registry';
+
+import { searchNpm } from 'lib/npm-registry';
 
 class NpmSearch extends Tool {
   override name = 'npm-search';
@@ -10,24 +11,12 @@ class NpmSearch extends Tool {
   // eslint-disable-next-line no-underscore-dangle, class-methods-use-this
   protected override async _call(searchString: string): Promise<string> {
     try {
-      const { objects: results } = await searchPackages({
-        query: {
-          text: searchString,
-        },
-      });
-
+      const results = await searchNpm(searchString);
       if (results.length < 1) {
         return 'Error: no results';
       }
 
-      const info = results.map(
-        ({ package: { name, description }, score: { final } }) => ({
-          name,
-          description,
-          score: final,
-        })
-      );
-      return JSON.stringify(info);
+      return JSON.stringify(results);
     } catch (err) {
       return `Error: ${err}`;
     }

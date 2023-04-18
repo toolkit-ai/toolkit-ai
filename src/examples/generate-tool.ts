@@ -5,6 +5,7 @@ import Toolkit from '../Toolkit';
 const toolkit = new Toolkit({
   openAIApiKey: '',
   serpApiKey: '',
+  logToConsole: true,
 });
 
 (async () => {
