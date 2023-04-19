@@ -8,6 +8,7 @@ import type { Tool } from 'lib/types';
 type ToolIteratorInput = {
   openAIApiKey: string;
   serpApiKey: string;
+  modelName?: string;
   verbose?: boolean;
   maxIterations?: number;
 };
@@ -24,6 +25,7 @@ class ToolIterator {
   constructor({
     openAIApiKey,
     serpApiKey,
+    modelName = 'gpt-4',
     verbose = false,
     maxIterations = 5,
   }: ToolIteratorInput) {
@@ -33,6 +35,7 @@ class ToolIterator {
     this.toolkit = new Toolkit({
       openAIApiKey,
       serpApiKey,
+      modelName,
       logToConsole: verbose,
     });
   }

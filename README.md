@@ -8,8 +8,8 @@ This project is brought to you by the team from [Pal](https://www.heypal.chat) -
 
 ## Roadmap
 - [x] Generate LangChain tools via the npm package
-- [ ] CLI-based usage
-- [ ] Agent auto-runs & continually improve the tool
+- [x] CLI-based usage
+- [x] Agent auto-runs & continually improve the tool
 - [ ] ChatGPT plugin definition & hosting
 
 ## Usage

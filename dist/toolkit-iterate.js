@@ -81,11 +81,13 @@ class ToolFormatter {
 
 class BaseToolGenerationChain {
     openAIApiKey;
+    modelName;
     logToConsole;
     chain;
     constructor(input) {
         this.openAIApiKey = input.openAIApiKey;
         this.logToConsole = input.logToConsole;
+        this.modelName = input.modelName;
     }
     async generate(input) {
         const outputKey = this.getOutputKey();
@@ -108,7 +110,7 @@ class BaseToolGenerationChain {
     }
     newLlmChain() {
         const llm = new OpenAI({
-            modelName: 'gpt-4',
+            modelName: this.modelName,
             temperature: 0,
             openAIApiKey: this.openAIApiKey,
         });
@@ -328,19 +330,23 @@ class Toolkit {
         if (!serpApiKey) {
             throw new Error('Serp API key not defined in params or environment');
         }
+        const modelName = input?.modelName || 'gpt-4';
         const logToConsole = input?.logToConsole || false;
         this.simpleToolGenerationChain = new SimpleToolGenerationChain({
             openAIApiKey,
+            modelName,
             logToConsole,
         });
         this.executorToolGenerationChain = new ExecutorToolGenerationChain({
             openAIApiKey,
             serpApiKey,
+            modelName,
             logToConsole,
         });
         this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
             openAIApiKey,
             serpApiKey,
+            modelName,
             logToConsole,
         });
     }
@@ -386,13 +392,14 @@ class ToolIterator {
     openAIApikey;
     verbose;
     maxIterations;
-    constructor({ openAIApiKey, serpApiKey, verbose = false, maxIterations = 5, }) {
+    constructor({ openAIApiKey, serpApiKey, modelName = 'gpt-4', verbose = false, maxIterations = 5, }) {
         this.openAIApikey = openAIApiKey;
         this.verbose = verbose;
         this.maxIterations = maxIterations;
         this.toolkit = new Toolkit({
             openAIApiKey,
             serpApiKey,
+            modelName,
             logToConsole: verbose,
         });
     }
@@ -469,6 +476,7 @@ program
     .requiredOption('--outputJs <path>', 'path to javascript output file')
     .option('--openAIApiKey <key>')
     .option('--serpApiKey <key>')
+    .option('--modelName <name>', 'name of the OpenAI model to use', 'gpt-4')
     .option('-v, --verbose', undefined, false);
 program.parse();
 const options = program.opts();
@@ -486,6 +494,7 @@ const input = IterateInputSchema.parse(inputJson);
 const iterator = new ToolIterator({
     openAIApiKey,
     serpApiKey,
+    modelName: options.modelName,
     verbose: options.verbose,
 });
 (async () => {

@@ -4,6 +4,7 @@ import type { Tool } from 'lib/types';
 export type ToolkitInput = {
     openAIApiKey?: string;
     serpApiKey?: string;
+    modelName?: string;
     logToConsole?: boolean;
 };
 declare class Toolkit {
