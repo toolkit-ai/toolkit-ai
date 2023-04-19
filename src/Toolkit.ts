@@ -13,6 +13,7 @@ import type { GeneratedTool, BaseTool, Tool } from 'lib/types';
 export type ToolkitInput = {
   openAIApiKey?: string;
   serpApiKey?: string;
+  modelName?: string;
   logToConsole?: boolean;
 };
 
@@ -37,20 +38,24 @@ class Toolkit {
       throw new Error('Serp API key not defined in params or environment');
     }
 
+    const modelName = input?.modelName || 'gpt-4';
     const logToConsole = input?.logToConsole || false;
 
     this.simpleToolGenerationChain = new SimpleToolGenerationChain({
       openAIApiKey,
+      modelName,
       logToConsole,
     });
     this.executorToolGenerationChain = new ExecutorToolGenerationChain({
       openAIApiKey,
       serpApiKey,
+      modelName,
       logToConsole,
     });
     this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
       openAIApiKey,
       serpApiKey,
+      modelName,
       logToConsole,
     });
   }

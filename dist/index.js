@@ -102,11 +102,13 @@ class ToolFormatter {
 
 class BaseToolGenerationChain {
     openAIApiKey;
+    modelName;
     logToConsole;
     chain;
     constructor(input) {
         this.openAIApiKey = input.openAIApiKey;
         this.logToConsole = input.logToConsole;
+        this.modelName = input.modelName;
     }
     async generate(input) {
         const outputKey = this.getOutputKey();
@@ -129,7 +131,7 @@ class BaseToolGenerationChain {
     }
     newLlmChain() {
         const llm = new OpenAI({
-            modelName: 'gpt-4',
+            modelName: this.modelName,
             temperature: 0,
             openAIApiKey: this.openAIApiKey,
         });
@@ -323,19 +325,23 @@ class Toolkit {
         if (!serpApiKey) {
             throw new Error('Serp API key not defined in params or environment');
         }
+        const modelName = input?.modelName || 'gpt-4';
         const logToConsole = input?.logToConsole || false;
         this.simpleToolGenerationChain = new SimpleToolGenerationChain({
             openAIApiKey,
+            modelName,
             logToConsole,
         });
         this.executorToolGenerationChain = new ExecutorToolGenerationChain({
             openAIApiKey,
             serpApiKey,
+            modelName,
             logToConsole,
         });
         this.iterativeToolGenerationChain = new IterativeToolGenerationChain({
             openAIApiKey,
             serpApiKey,
+            modelName,
             logToConsole,
         });
     }

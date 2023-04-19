@@ -4,6 +4,7 @@ import type { ChainValues } from 'langchain/schema';
 import type { JsonObject } from 'lib/types';
 export type BaseToolGenerationChainInput = {
     openAIApiKey: string;
+    modelName: string;
     logToConsole: boolean;
 };
 export type GenerateToolInput = {
@@ -14,6 +15,7 @@ export type GenerateToolInput = {
 };
 declare abstract class BaseToolGenerationChain<T> {
     private openAIApiKey;
+    private modelName;
     private logToConsole;
     protected chain: BaseChain;
     constructor(input: BaseToolGenerationChainInput);

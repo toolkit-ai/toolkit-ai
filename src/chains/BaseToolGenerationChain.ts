@@ -8,6 +8,7 @@ import type { JsonObject } from 'lib/types';
 
 export type BaseToolGenerationChainInput = {
   openAIApiKey: string;
+  modelName: string;
   logToConsole: boolean;
 };
 
@@ -21,6 +22,8 @@ export type GenerateToolInput = {
 abstract class BaseToolGenerationChain<T> {
   private openAIApiKey: string;
 
+  private modelName: string;
+
   private logToConsole: boolean;
 
   protected chain!: BaseChain;
@@ -28,6 +31,7 @@ abstract class BaseToolGenerationChain<T> {
   constructor(input: BaseToolGenerationChainInput) {
     this.openAIApiKey = input.openAIApiKey;
     this.logToConsole = input.logToConsole;
+    this.modelName = input.modelName;
   }
 
   async generate(input: T) {
@@ -63,7 +67,7 @@ abstract class BaseToolGenerationChain<T> {
 
   protected newLlmChain() {
     const llm = new OpenAI({
-      modelName: 'gpt-4',
+      modelName: this.modelName,
       temperature: 0,
       openAIApiKey: this.openAIApiKey,
     });

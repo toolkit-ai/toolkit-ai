@@ -14,6 +14,7 @@ interface Options {
   outputJs: string;
   openAIApiKey?: string | undefined;
   serpApiKey?: string | undefined;
+  modelName: string;
   verbose: boolean;
 }
 
@@ -25,6 +26,7 @@ program
   .requiredOption('--outputJs <path>', 'path to javascript output file')
   .option('--openAIApiKey <key>')
   .option('--serpApiKey <key>')
+  .option('--modelName <name>', 'name of the OpenAI model to use', 'gpt-4')
   .option('-v, --verbose', undefined, false);
 program.parse();
 const options = program.opts<Options>();
@@ -49,6 +51,7 @@ const input = IterateInputSchema.parse(inputJson);
 const iterator = new ToolIterator({
   openAIApiKey,
   serpApiKey,
+  modelName: options.modelName,
   verbose: options.verbose,
 });
 
